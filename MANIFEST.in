@@ -1,0 +1,4 @@
+include setup.py
+include README.txt
+recursive-include src *.h *.cc *.cpp
+
