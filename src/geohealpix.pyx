@@ -269,7 +269,7 @@ class SearchEngine(object):
 
         lat, lon, radius = self.get_disc(lat0, lon0, lat1, lon1)
 
-        order = int(floor(log(self.K1/radius, 2)))
+        order = int(floor(log(self.K1/(2*radius), 2)))
 
         if returnDisc:
             return order, lat, lon, radius
