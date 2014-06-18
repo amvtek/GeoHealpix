@@ -3,7 +3,7 @@
 from collections import namedtuple
 import random
 
-from utils import get_geohealpix_sample, build_test_case
+from base import unittest, get_geohealpix_sample
 
 import geohealpix
 print "Imported geohealpix version : %s" % str(geohealpix.__version__)
@@ -15,46 +15,52 @@ G0 = geohealpix.GeoGrid(0)
 HPX_BASES = [c for c in "ABCDEFGHIJKL"]
 
 
-def make_test_bbox_for_point(pt):
+def build_TestBDiamondsForPoint(seed):
 
-    def test_bbox_for_point(self):
+    basePoints = get_geohealpix_sample(seed, 8)
 
-        MIN_DELTA = 0.1
-        MAX_DELTA = 10
-        LAT_STEPS = 10
-        LON_STEPS = LAT_STEPS  # 20
-        random.seed(pt)
-        delta = random.uniform(MIN_DELTA, MAX_DELTA)
+    def make_test_bdiamonds_for_point(pt):
 
-        Hp = geohealpix.GeoGrid
-        search =geohealpix.SearchEngine(2, 10)
+        def test_bbox_for_point(self):
 
-        Point = namedtuple('Point', 'lat lon')
-        swCorner = Point(pt[0], pt[1])
-        neCorner = Point(swCorner.lat+delta, swCorner.lon+delta)
+            MIN_DELTA = 0.1
+            MAX_DELTA = 10
+            LAT_STEPS = 10
+            LON_STEPS = LAT_STEPS  # 20
+            random.seed(pt)
+            delta = random.uniform(MIN_DELTA, MAX_DELTA)
 
-        order = search.get_best_grid_for(
-            swCorner.lat, swCorner.lon, neCorner.lat, neCorner.lon)
+            Hp = geohealpix.GeoGrid
+            search =geohealpix.SearchEngine(2, 10)
 
-        diamonds = search.list_all_fcodes_for(
-            swCorner.lat, swCorner.lon, neCorner.lat, neCorner.lon)
+            Point = namedtuple('Point', 'lat lon')
+            swCorner = Point(pt[0], pt[1])
+            neCorner = Point(swCorner.lat+delta, swCorner.lon+delta)
 
-        for loni in xrange(LAT_STEPS+1):
+            order = search.get_best_grid_for(
+                swCorner.lat, swCorner.lon, neCorner.lat, neCorner.lon)
 
-            for lati in xrange(LON_STEPS+1):
+            diamonds = search.list_all_fcodes_for(
+                swCorner.lat, swCorner.lon, neCorner.lat, neCorner.lon)
 
-                testPoint = Point(swCorner.lat + delta*lati/LAT_STEPS,
-                                  swCorner.lon + delta*loni/LON_STEPS)
-                testPointCode = Hp(order).get_fcode(testPoint.lat, testPoint.lon)
+            for loni in xrange(LAT_STEPS+1):
 
-                self.assertIn(testPointCode, diamonds)
+                for lati in xrange(LON_STEPS+1):
 
-    return test_bbox_for_point
+                    testPoint = Point(swCorner.lat + delta*lati/LAT_STEPS,
+                                      swCorner.lon + delta*loni/LON_STEPS)
+                    testPointCode = Hp(order).get_fcode(testPoint.lat, testPoint.lon)
 
-ppb = 4
-seed = 1
-sample = get_geohealpix_sample(seed, ppb)
+                    self.assertIn(testPointCode, diamonds)
 
-TestBBoxForPoint = build_test_case(sample, 'TestBBoxForPoint',
-                                       "test_bbox_for_point_%s",
-                                       make_test_bbox_for_point)
+        return make_test_bdiamonds_for_point
+
+    ctx = {}
+    for name, point in basePoints.items():
+
+        fname = "test_fcode_are_nested_for_point_%s" % name
+        ctx[fname] = make_test_bdiamonds_for_point(point)
+
+    return type('TestBDiamondsForPoint', (unittest.TestCase,), ctx)
+
+build_TestBDiamondsForPoint = build_TestBDiamondsForPoint(1)
