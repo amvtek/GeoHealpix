@@ -225,6 +225,12 @@ cdef class GeoGrid(object):
 
         return self._order
     order = property(get_order)
+
+    def get_npix(self):
+        "return Npix()"
+
+        return self._grid.Npix()
+    npix = property(get_npix)
         
     def __hash__(self):
 

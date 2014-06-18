@@ -1,98 +1,133 @@
 #  -*- coding: utf-8 -*-
 
-from utils import get_geohealpix_sample, build_test_case
+from base import unittest, get_geohealpix_sample
 
 import geohealpix
 print "Imported geohealpix version : %s" % str(geohealpix.__version__)
 print "---"
 
-# Quick example showing how we can obtain a collection of point
-# Which covers the earth 'optimally' for HEALPIX testing
-G0 = geohealpix.GeoGrid(0)
-HPX_BASES = [c for c in "ABCDEFGHIJKL"]
+def build_TestCreateGrid():
+
+    def make_test_create_grid(order):
+
+        NPIX = 12*2**(2*order)
+
+        def test_create_grid(self):
+
+            nestGrid = geohealpix.GeoGrid(order)
+            ringGrid = geohealpix.GeoGrid(order, 0)
+
+            self.assertEquals(nestGrid.get_order(), order)
+            self.assertEquals(nestGrid.get_scheme(), 'NEST')
+            self.assertEquals(nestGrid.get_npix(), NPIX)
+
+            self.assertEquals(ringGrid.get_order(), order)
+            self.assertEquals(ringGrid.get_scheme(), 'RING')
+            self.assertEquals(ringGrid.get_npix(), NPIX)
+
+        return test_create_grid
+
+    ctx = {}
+    for o in xrange(30):
+
+        fname = "test_create_grid_%02i" % o
+        ctx[fname] = make_test_create_grid(o)
+
+    return type('TestCreateGrid',(unittest.TestCase,),ctx)
+
+TestCreateGrid = build_TestCreateGrid()
 
 
-def make_test_create_grid(order):
+def build_TestCreateGridWithInvalidOrder():
 
-    def test_create_grid(self):
+    def make_test_grid_with_invalid_order(order):
 
-        nestGrid = geohealpix.GeoGrid(order)
-        ringGrid = geohealpix.GeoGrid(order, 0)
+        def test_grid_with_invalid_order(self):
 
-        self.assertEquals(nestGrid.get_order(), order)
-        self.assertEquals(nestGrid.get_scheme(), 'NEST')
-        self.assertEquals(ringGrid.get_order(), order)
-        self.assertEquals(ringGrid.get_scheme(), 'RING')
+            with self.assertRaises(ValueError):
+                geohealpix.GeoGrid(order)
 
-    return test_create_grid
+        return test_grid_with_invalid_order
 
+    ctx = {}
+    for name, order in [('minus_one',-1),('sixty',60),('string','string')]:
 
-def make_test_grid_with_invalid_order(order):
+        fname = "test_create_fail_with_order_equals_%s" % name
+        ctx[fname] = make_test_grid_with_invalid_order(order)
 
-    def test_grid_with_invalid_order(self):
+    return type('TestCreateGridWithInvalidOrder',(unittest.TestCase,),ctx)
 
-        with self.assertRaises(ValueError):
-            geohealpix.GeoGrid(order)
+TestCreateGridWithInvalidOrder = build_TestCreateGridWithInvalidOrder()
 
-    return test_grid_with_invalid_order
+def build_TestCallCode(seed):
 
+    Grid = geohealpix.GeoGrid # local alias
 
-def make_test_call_code_for_point(pt):
+    # generate base points
+    basePoints = get_geohealpix_sample(seed, 8)
 
-    def test_call_code_for_point(self):
+    # pregenerates all grids
+    grids = [ (o,Grid(o),Grid(o,0)) for o in xrange(30)]
+    
+    def make_test_call_code_for_point(pt):
 
-        nestGrid = geohealpix.GeoGrid(0)
-        ringGrid = geohealpix.GeoGrid(0, 0)
+        def test_call_code_for_point(self):
 
-        self.assertTrue('A' <= nestGrid.get_fcode(pt[0], pt[1]) <= 'L')
-        self.assertTrue('A' <= ringGrid.get_fcode(pt[0], pt[1]) <= 'L')
-        self.assertTrue(0 <= nestGrid.get_code(pt[0], pt[1]) <= 11)
-        self.assertTrue(0 <= ringGrid.get_code(pt[0], pt[1]) <= 11)
+            for order, nestGrid, ringGrid in grids:
 
-    return test_call_code_for_point
+                npix = 12*2**(2*order)
+                fcodelen = 1 + order
 
+                # call get_code...
+                self.assertTrue(0 <= nestGrid.get_code(*pt) <= npix)
+                self.assertTrue(0 <= ringGrid.get_code(*pt) <= npix)
 
-def make_test_call_fcode_for_nested_grid_and_point(pt):
+                # call get_fcode
+                self.assertEquals(len(nestGrid.get_fcode(*pt)),fcodelen)
+                self.assertEquals(len(ringGrid.get_fcode(*pt)),fcodelen)
+        
+        return test_call_code_for_point
 
-    def test_call_fcode_for_nested_grid_and_point(self):
+    ctx = {}
+    for name, point in basePoints.items():
 
-        nest0 = geohealpix.GeoGrid(0)
-        fcode0 = nest0.get_fcode(pt[0], pt[1])
-        nest1 = geohealpix.GeoGrid(1)
-        fcode1 = nest1.get_fcode(pt[0], pt[1])
+        fname = "test_code_for_point_%s" % name
+        ctx[fname] = make_test_call_code_for_point(point)
 
-        self.assertTrue(fcode1.startswith(fcode0))
+    return type('TestCallCode',(unittest.TestCase,),ctx)
 
-    return test_call_fcode_for_nested_grid_and_point
+TestCallCode = build_TestCallCode(1)
 
+def build_TestFCodeAreNested(seed):
 
-# Creating the TestCases
+    Grid = geohealpix.GeoGrid # local alias
 
-TestCreateGrid = build_test_case(dict(zip(xrange(30), xrange(30))),
-                                 'TestCreateGrid',
-                                 "test_create_grid_%s",
-                                 make_test_create_grid)
+    # generate base points
+    basePoints = get_geohealpix_sample(seed, 8)
 
-TestGridWithInvalidOrder = build_test_case(
-    dict(zip([-1, 30, 60], [-1, 30, 60])),
-    'TestGridWithInvalidOrder',
-    "test_grid_with_invalid_order_%s",
-    make_test_grid_with_invalid_order)
+    # pregenerates all grids
+    grids = [ Grid(o) for o in xrange(30)]
 
-ppb = 4
-seed = 1
-sample = get_geohealpix_sample(seed, ppb)
+    def make_test_call_fcode_for_nested_grid_and_point(pt):
 
-TestCallCodeForPoint = build_test_case(sample, 'TestCallCodeForPoint',
-                                       "test_call_code_for_point_%s",
-                                       make_test_call_code_for_point)
+        def test_call_fcode_for_nested_grid_and_point(self):
 
-TestCallFcodeForNestedGridAndPoint = build_test_case(
-    sample, 'TestCallFcodeForNestedGridAndPoint',
-    "test_call_fcode_for_nested_grid_and_point_%s",
-    make_test_call_fcode_for_nested_grid_and_point
-)
+            for o in xrange(1,30,1):
 
+                fc0 = grids[o - 1].get_fcode(*pt)
+                fc1 = grids[o].get_fcode(*pt)
+                
+                # test that codes are nested
+                self.assertTrue(fc1.startswith(fc0))
 
+        return test_call_fcode_for_nested_grid_and_point
 
+    ctx = {}
+    for name, point in basePoints.items():
 
+        fname = "test_fcode_are_nested_for_point_%s" % name
+        ctx[fname] = make_test_call_fcode_for_nested_grid_and_point(point)
+
+    return type('TestFCodeAreNested',(unittest.TestCase,),ctx)
+
+TestFCodeAreNested = build_TestFCodeAreNested(1)
