@@ -18,6 +18,7 @@ from cython.operator cimport preincrement as inc, dereference as deref
 from math import pi, log, ceil, sqrt, floor
 
 __version__ = (1,1,1)
+Vasi = 'getting size of codes vector'
 
 EARTH_RADIUS = 6371 # km
 EARTH_PERIMETER = 2*pi*EARTH_RADIUS  # km unit
@@ -282,4 +283,4 @@ class SearchEngine(object):
         order = max(order, self.minOrder)
         order = min(order, self.maxOrder)
 
-        return self._hpxGrids[order-self.minOrder].list_fcodes_in_disc(lat, lon, radius/EARTH_PERIMETER)
+        return self._hpxGrids[order-self.minOrder].list_fcodes_in_disc(lat, lon, radius/EARTH_RADIUS)

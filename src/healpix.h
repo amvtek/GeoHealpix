@@ -81,7 +81,7 @@ template<typename I> class T_Healpix: public T_Healpix_Base<I> {
             // list codes as I...
             vector<I> icodes = vector<I>();
             get_codes_in_disc(lat, lon, radius, icodes);
-            
+
             // initialize results vector...
             results.clear();
             results.reserve(icodes.size());
