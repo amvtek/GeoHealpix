@@ -52,6 +52,20 @@ double earth_dist_deg(numarg& lat0, numarg& lon0, numarg& lat1, numarg& lon1){
     return 2*EARTH_RADIUS*atan2(sqrt(a),sqrt(1-a));
 }
 
+// radians 'great circle' distance, arguments in radians
+double gc_dist_rad(numarg& lat0, numarg& lon0, numarg& lat1, numarg& lon1){
+
+    double a = hvsn2_dist_rad(lat0,lon0,lat1,lon1);
+    return 2*atan2(sqrt(a),sqrt(1-a));
+}
+
+// radians 'great circle' distance, arguments in degrees
+double gc_dist_deg(numarg& lat0, numarg& lon0, numarg& lat1, numarg& lon1){
+    
+    double a = hvsn2_dist_rad(d2r(lat0),d2r(lon0),d2r(lat1),d2r(lon1));
+    return 2*atan2(sqrt(a),sqrt(1-a));
+}
+
 // bearing in degree from (lat0,lon0) to (lat1,lon1)
 double bearing_deg(numarg& lat0, numarg& lon0, numarg& lat1, numarg& lon1){
 

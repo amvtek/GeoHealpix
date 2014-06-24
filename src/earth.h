@@ -37,6 +37,10 @@ double earth_dist_rad(numarg& lat0, numarg& lon0, numarg& lat1, numarg& lon1);
 
 double earth_dist_deg(numarg& lat0, numarg& lon0, numarg& lat1, numarg& lon1);
 
+double gc_dist_rad(numarg& lat0, numarg& lon0, numarg& lat1, numarg& lon1);
+
+double gc_dist_deg(numarg& lat0, numarg& lon0, numarg& lat1, numarg& lon1);
+
 double bearing_deg(numarg& lat0, numarg& lon0, numarg& lat1, numarg& lon1);
 
 void point_at_dist_and_bearing_from_ref(

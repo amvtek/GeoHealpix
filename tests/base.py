@@ -46,11 +46,11 @@ def get_geohealpix_sample(seed, ppb=4):
     if ppb <= 0:
         raise ValueError("Invalid ppb !")
 
-    # seed random
-    import random
-    random.seed(seed)
+    # construct local RNG
+    from random import Random
+    rnd = Random(seed)
 
-    unf = random.uniform  # local alias
+    unf = rnd.uniform  # local alias
     get_latlon = lambda: (unf(-90, 90), unf(-180, 180))
 
     requirements = dict([(c, ppb) for c in HPX_BASES])

@@ -105,6 +105,16 @@ template<typename I> class T_Healpix: public T_Healpix_Base<I> {
         }
 
         /*
+         * return maximum radian aperture ('radian diameter...')
+         * that can be covered by a single grid pixel
+        */
+        double get_aperture() const {
+
+            return sqrt(4*pi/this->Npix()); 
+        }
+
+
+        /*
          * encode I code to HEALPIX QuadTree representation
          * Results is stored in dest buffer
          * return 0 if conversion was successfull

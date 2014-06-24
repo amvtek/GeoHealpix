@@ -69,7 +69,7 @@ def build_TestCallCode(seed):
     basePoints = get_geohealpix_sample(seed, 8)
 
     # pregenerates all grids
-    grids = [(o, Grid(o), Grid(o, 0)) for o in xrange(30)]
+    grids = [(o, Grid(o), Grid(o, nested=False)) for o in xrange(30)]
     
     def make_test_call_code_for_point(pt):
 

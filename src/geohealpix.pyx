@@ -16,9 +16,9 @@ from libcpp.string cimport string
 from cython.operator cimport preincrement as inc, dereference as deref
 
 from math import pi, log, ceil, sqrt, floor
+from bisect import bisect
 
-__version__ = (1,1,1)
-Vasi = 'getting size of codes vector'
+__version__ = (1,1,3)
 
 EARTH_RADIUS = 6371 # km
 EARTH_PERIMETER = 2*pi*EARTH_RADIUS  # km unit
@@ -27,6 +27,7 @@ EARTH_AREA_SURFACE = 510072000  # squared km
 cdef extern from "earth.h":
     
     double earth_dist_deg(double&,double&,double&,double&)
+    double gc_dist_deg(double&,double&,double&,double&)
     double bearing_deg(double& lat0, double& lon0, double& lat1, double& lon1)
     void point_at_dist_and_bearing_from_ref(double&,double&,double&,double&,double*,double*)
 
@@ -51,6 +52,7 @@ cdef extern from "healpix.h":
         void get_codes_in_disc(double&, double&, double&, vector[int64_t]&) except +
         void get_fcodes_in_disc(double&, double&, double&, vector[string]&) except +
         int64_t Npix()
+        double get_aperture()
 
 def earth_dist(lat0, lon0, lat1, lon1):
     "return distance in meters in between (lat0,lon0) and (lat1,lon1)"
@@ -141,7 +143,7 @@ cdef class GeoGrid(object):
     cdef HealpixGridHR *_grid
     cdef int _order, _scheme
     
-    def __cinit__(self, order, scheme=Healpix.NEST, *args, **kwargs):
+    def __cinit__(self, order, nested=True, *args, **kwargs):
 
         # extra arguments are to simplify python inheritance...
 
@@ -152,7 +154,7 @@ cdef class GeoGrid(object):
         self._order = order
 
         # choose grid scheme
-        if scheme : # we use NEST
+        if nested : # we use NEST scheme
             self._scheme = Healpix.NEST
         else:
             self._scheme = Healpix.RING
@@ -231,6 +233,12 @@ cdef class GeoGrid(object):
 
         return self._grid.Npix()
     npix = property(get_npix)
+
+    def get_aperture(self):
+        "return pixel grid aperture"
+
+        return self._grid.get_aperture()
+    aperture = property(get_aperture)
         
     def __hash__(self):
 
@@ -247,46 +255,36 @@ cdef class GeoGrid(object):
 
         del self._grid
 
-
 class SearchEngine(object):
 
-    K1 = sqrt(EARTH_AREA_SURFACE/12)
+    def __init__(self, *grids):
 
-    def __init__(self, minOrder, maxOrder):
+        if not grids:
+            raise ValueError("SearchEngine requires at least 1 GeoGrid !!")
 
-        # validates minOrder, maxOrder
-        minOrder,maxOrder = int(minOrder), int(maxOrder)
-        if minOrder > maxOrder:
-            raise ValueError("minOrder > maxOrder !")
-        self.minOrder = minOrder
-        self.maxOrder = maxOrder
+        # sort grid by aperture size
+        grids = sorted(grids, key=lambda g:g.aperture)
 
-        # precache possible geogrids
-        self._hpxGrids = [GeoGrid(o) for o in xrange(minOrder,maxOrder+1)]
+        # construct inner _hpxGridIdx as sorted list of (g.aperture/2.0,g)
+        self._hpxGridIdx = [(g.aperture/2.0,g) for g in grids]
 
-    def get_disc(self, lat0, lon0, lat1, lon1):
+    def _get_disk_covering_bbox(self, lat0, lon0, lat1, lon1):
 
-        lat = (lat0+lat1)/2  # center lat
-        lon = (lon0+lon1)/2  # center lon
-        radius = earth_dist(lat0, lon0, lat1, lon1)/2000
+        lat = (lat0 + lat1)/2.0
+        lon = (lon0 + lon1)/2.0
+        cdef double radius = gc_dist_deg(lat0, lon0, lat1, lon1)/2.0
 
-        return lat, lon, radius
+        return (lat, lon, radius)
 
-    def get_best_grid_for(self, lat0, lon0, lat1, lon1, returnDisc=False):
+    def list_fcode_tiling_bbox(self, lat0, lon0, lat1, lon1):
 
-        lat, lon, radius = self.get_disc(lat0, lon0, lat1, lon1)
+        # minimal search disk to cover rectangular bbox 
+        lat, lon, radius = self._get_disk_covering_bbox(lat0, lon0, lat1, lon1)
 
-        order = int(floor(log(self.K1/(2*radius), 2)))
+        # select best grid to process search disk
+        gridIdx = bisect(self._hpxGridIdx, (radius,))
+        if gridIdx == len(self._hpxGridIdx):
+            gridIdx = -1
+        maxradius, bestGrid = self._hpxGridIdx[gridIdx]
 
-        if returnDisc:
-            return order, lat, lon, radius
-        return order
-
-    def list_all_fcodes_for(self, lat0, lon0, lat1, lon1):
-
-        order, lat, lon, radius = self.get_best_grid_for(lat0, lon0, lat1, lon1, returnDisc=True)
-
-        order = max(order, self.minOrder)
-        order = min(order, self.maxOrder)
-
-        return self._hpxGrids[order-self.minOrder].list_fcodes_in_disc(lat, lon, radius/EARTH_RADIUS)
+        return bestGrid.list_fcodes_in_disc(lat, lon, min(radius,maxradius))
