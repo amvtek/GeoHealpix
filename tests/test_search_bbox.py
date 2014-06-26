@@ -46,9 +46,9 @@ def build_TestSearchBbox(seed, ppb=8, latlon_delta=(0.1,10.0), tpb=128):
             bboxPixTiles = searchEngine.list_fcode_tiling_bbox(*bbox)
 
             # bbox shall be tiled by at most 4 healpix pixels
-            # TODO: not OK, see if our assumptions are wrong
-            failmsg = "bbox is tiled by %i pixels !!" % len(bboxPixTiles)
-            #self.assertTrue(len(bboxPixTiles)<=4,failmsg)
+            # healpix library does not provide guarantee for this
+            # failmsg = "bbox is tiled by %i pixels !!" % len(bboxPixTiles)
+            # self.assertTrue(len(bboxPixTiles)<=6,failmsg)
 
             # generate tpb random point inside bbox
             # and make sure they are in one of the pixel in bboxPixTiles...

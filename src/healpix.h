@@ -60,7 +60,16 @@ template<typename I> class T_Healpix: public T_Healpix_Base<I> {
             // perform query_disc ...
             GeoPointing center = GeoPointing(lat,lon);
             rangeset<I> lc = rangeset<I>();
-            this->query_disc_inclusive(center,radius,lc);
+            if (this->Scheme() == NEST){
+
+                // fact = 4, to decrease the likeliness of 'false positive'
+                this->query_disc_inclusive(center, radius, lc, 4);
+            }
+            else{
+
+                // fact = 1 is the default for RING
+                this->query_disc_inclusive(center, radius, lc, 1);
+            }
             lc.toVector(results);
         }
 
