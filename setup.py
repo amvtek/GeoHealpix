@@ -18,7 +18,7 @@ headers.extend(glob("src/healpix/*.h"))
 
 setup(
     name="geohealpix",
-    version="1.1.1",
+    version="1.2.0",
     description="Efficient Geohashing using HEALPIX global grid",
     author="AmvTek development team",
     author_email="devel@amvtek.com",
