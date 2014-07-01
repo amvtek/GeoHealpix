@@ -18,7 +18,7 @@ from cython.operator cimport preincrement as inc, dereference as deref
 from math import pi, log, ceil, sqrt, floor
 from bisect import bisect
 
-__version__ = (1,1,3)
+__version__ = (1,2,0)
 
 EARTH_RADIUS = 6371 # km
 EARTH_PERIMETER = 2*pi*EARTH_RADIUS  # km unit
@@ -36,7 +36,7 @@ cdef extern from "msession.h":
     ctypedef unsigned long ulong
 
     cdef cppclass MSession:
-        MSession()
+        MSession(double&)
         int update(double&,double&)
         double& lat()
         double& lon()
@@ -77,18 +77,20 @@ cdef class TrackingSession(object):
     cdef MSession *session
     cdef object unitId
 
-    def __cinit__(self, *args, **kwargs):
+    def __cinit__(self, double odometer=0, location=None, *args, **kwargs):
 
         # *args,**kwargs are to simplify python inheritance
         # If in need to define an inheriting python class this __cinit__ class
         # will always be called, except if you redefine __new__
 
         # instanciate new MSession
-        self.session = new MSession()
+        self.session = new MSession(odometer)
 
-    def __init__(self, unitId):
+        # set initial location
+        if location is not None:
 
-        self.unitId = unitId
+            lat, lon = location
+            self.update(lat, lon)
 
     def update(self, double lat, double lon):
 

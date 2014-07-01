@@ -26,9 +26,9 @@ typedef unsigned long ulong;
 class MSession {
 
     public: 
-
-        MSession();
-
+        
+        MSession(const double& odom=0.0);
+        
         int update(const double& lat1, const double& lon1);
 
         const double& lat() const;

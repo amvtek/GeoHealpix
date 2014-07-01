@@ -14,10 +14,10 @@
 
 #include "msession.h"
 
-MSession::MSession(){
+MSession::MSession(const double& odom){
 
     // initializes session measurement
-    odometer = 0.0;
+    odometer = odom;
     t0 = time(NULL); 
     t1 = time(NULL);
     nUpdates = 0;
