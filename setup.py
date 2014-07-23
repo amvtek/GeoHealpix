@@ -20,10 +20,15 @@ setup(
     name="geohealpix",
     version="1.2.0",
     description="Efficient Geohashing using HEALPIX global grid",
-    author="AmvTek development team",
+    long_description=open('README.txt').read(),
+    author="AmvTek developers",
     author_email="devel@amvtek.com",
-    url="http://www.amvtek.com",
+    url="https://github.com/amvtek/GeoHealpix",
+    licence='LICENSE',
     headers=headers,
     ext_modules=[Extension('geohealpix', sources, language='c++')],
+    install_requires=[
+
+    ]
     )
 
