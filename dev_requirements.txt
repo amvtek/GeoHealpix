@@ -1,2 +1,2 @@
-Cython==0.20.1
+Cython==0.21
 docutils==0.11
